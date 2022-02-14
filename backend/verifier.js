@@ -153,7 +153,8 @@ async function runSolc(config) {
 	fs.writeFileSync(srcFile, config.flattenedSource)
 
 	var outDir = path.join(tmpDir, "out")
-	var args = ["--bin", "--abi", "--input-file", srcFile, "--output-dir", outDir]
+	var args = ["--bin", "--abi", "--input-file", srcFile,
+		"--output-dir", outDir, "--evm-version", "istanbul"]
 
 	if(config.optimizationUsed) {
 		args.push("--optimize")
@@ -167,6 +168,7 @@ async function runSolc(config) {
 	}
 	var exeFile = "solc-bin/solc-linux-amd64-"+config.compilerVersion
 	
+	console.log("runCommand", exeFile, args)
 	await runCommand(exeFile, args)
 	console.log("finished solc")
 
@@ -183,13 +185,22 @@ async function runSolc(config) {
 	return [[hexCode, abiJson], null]
 }
 
+function printHex(txt) {
+	for(var i=0; txt.length > 80; i++) {
+		console.log(i, txt.substr(0, 80))
+		txt = txt.substr(80)
+	}
+	console.log(txt)
+}
+
 async function test1() {
 	var content = fs.readFileSync("flatten.sol", {encoding: "utf8"});
 	var config = {
 		flattenedSource: content,
-		optimization: true,
+		optimizationUsed: true,
 		runs: 200,
 		compilerVersion: "v0.8.10+commit.fc410830",
+		contractAddress: "0x351264f24820C91317024B7748C98CA63d6a2781",
 		contractName: "ExchangeHub",
 		constructor: "constructor() public",
 		constructorArguments: [],
@@ -200,7 +211,6 @@ async function test1() {
 	console.log("hexCode", hexCode)
 	var abiJson = res[0][1]
 
-	console.log("hh", abi2solidity)
 	const ifcDefine = abi2solidity.default(abiJson)
 	console.log("interface", ifcDefine)
 
@@ -221,7 +231,13 @@ async function test1() {
 	console.log("creationBytecode", creationBytecode)
 
 	const deployedCode = await runCommand("./deploycode", [], creationBytecode.substr(2))
-	console.log("deployed", deployedCode)
+	console.log("deployed:", deployedCode)
+	const provider = new ethers.providers.JsonRpcProvider("https://smartbch.fountainhead.cash/mainnet")
+	const onchainCode = await provider.getCode(config.contractAddress)
+	console.log("on-chain:", onchainCode)
+	console.log("-----------")
+	printHex(deployedCode)
+	printHex(onchainCode.substr(2))
 }
 
 function main() {
