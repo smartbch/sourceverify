@@ -1,10 +1,10 @@
-const {chunksToLinesAsync, chomp, streamWrite, streamEnd, onExit} = require('@rauschma/stringio');
-const {spawn} = require('child_process');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-const {ABI2solidity} = require("abi2solidity");
-const {ethers} = require("ethers");
+import {chunksToLinesAsync, chomp, streamWrite, streamEnd, onExit} from '@rauschma/stringio';
+import {spawn} from 'child_process'
+import * as fs from 'fs'
+import * as os from 'os'
+import * as path from 'path'
+import {ethers} from "ethers";
+import abi2solidity from "abi2solidity";
 
 // contractAddress
 // contractName
@@ -153,7 +153,7 @@ async function runSolc(config) {
 	fs.writeFileSync(srcFile, config.flattenedSource)
 
 	var outDir = path.join(tmpDir, "out")
-	args = ["--bin", "--abi", "--input-file", srcFile, "--output-dir", outDir]
+	var args = ["--bin", "--abi", "--input-file", srcFile, "--output-dir", outDir]
 
 	if(config.optimizationUsed) {
 		args.push("--optimize")
@@ -199,6 +199,10 @@ async function test1() {
 	var hexCode = res[0][0]
 	console.log("hexCode", hexCode)
 	var abiJson = res[0][1]
+
+	console.log("hh", abi2solidity)
+	const ifcDefine = abi2solidity.default(abiJson)
+	console.log("interface", ifcDefine)
 
 	const factory = new ethers.ContractFactory([config.constructor], "0x"+hexCode)
 	let tx
