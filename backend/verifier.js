@@ -145,8 +145,9 @@ const SolVersions = new Set([
 ])
 
 async function runSolc(config) {
+	let tmpDir;
 	try {
-		let tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "Verifier"));
+		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "Verifier"));
 	} catch {
 		return [null, "Cannot make temp dir"]
 	}
@@ -175,16 +176,14 @@ async function runSolc(config) {
 	await runCommand(exeFile, args)
 	console.log("finished solc")
 
-	let binFile = path.join(outDir, config.contractName+".bin")
-	let hexCode = fs.readFileSync(binFile, {encoding: "utf8"});
-	let abiFile = path.join(outDir, config.contractName+".abi")
-	let abiJson = fs.readFileSync(abiFile, {encoding: "utf8"});
+	let hexCode = fs.readFileSync(path.join(outDir, config.contractName+".bin"), {encoding: "utf8"});
+	let abiJson = fs.readFileSync(path.join(outDir, config.contractName+".abi"), {encoding: "utf8"});
 
-	//try {
-	//	fs.rmSync(tmpDir, { recursive: true });
-	//} catch (e) {
-	//	return "Cannot remove temp dir"
-	//}
+	try {
+		fs.rmSync(tmpDir, { recursive: true,  });
+	} catch (e) {
+		return "Cannot remove temp dir"
+	}
 	return [[hexCode, abiJson], null]
 }
 
@@ -213,7 +212,20 @@ context = {
 return: bool, if same, return true, or false.
 * */
 export async function verifyContract(context) {
+	let exist = true;
+	try {
+		await contractDB.get(context.contractAddress);
+	} catch (e) {
+		exist = false
+	}
+	console.log("exist:", exist);
+	if (exist) {
+		return true;
+	}
 	let res = await runSolc(context);
+	if (res[1] != null) {
+		return false;
+	}
 	let hexCode = res[0][0];
 	console.log("hexCode", hexCode);
 	let abiJson = res[0][1];
@@ -245,7 +257,11 @@ export async function verifyContract(context) {
 	console.log("-----------");
 	printHex(deployedCode);
 	printHex(onChainCode.substr(2));
-	return deployedCode === onChainCode.substr(2);
+	let isSame =  deployedCode === onChainCode.substr(2);
+	if (isSame) {
+		await contractDB.put(context.contractAddress, context);
+	}
+	return isSame
 }
 
 /*
@@ -266,16 +282,9 @@ if not exist or something error, return empty string "".
 * */
 export async function getContractContext(contractAddress) {
 	let context = "";
-	contractDB.get(contractAddress, function (err, value) {
-		if (err) {
-			if (err.type === 'NotFoundError') {
-				return
-			}
-			console.log("get from db error: ", err);
-			return
-		}
-		context = JSON.parse(value);
-	})
+	try {
+		context = await contractDB.get(contractAddress);
+	} catch (e) {}
 	return context;
 }
 
