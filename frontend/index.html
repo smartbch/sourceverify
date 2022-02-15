@@ -1,0 +1,320 @@
+<html>
+<head>
+<link rel="icon" href="assets/favicon.svg" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<script src="assets/ethers-5.5.2.umd.min.js" type="application/javascript"></script>
+<script src="assets/detect-provider.min.js"></script>
+<script src="assets/attention.js"></script>
+<link rel="stylesheet" href="assets/bulma.min.css">
+<link rel="stylesheet" href="assets/attention.min.css">
+<title>Contract Source Code Verify</title>
+</head>
+<body style="margin: 0 auto; width: 380px">
+  <div class="content">
+	<p>The smart contract's address:<br>
+	<input id="contractAddress" class="input is-link is-small" type="text"></p>
+
+	<p>The smart contract's name:<br>
+	<input id="contractName" class="input is-link is-small" type="text" placeholder="ExampleCoin"></p>
+
+	Flattened source code:<br>
+	<div class="file has-name is-fullwidth is-link">
+          <label class="file-label is-small">
+            <input class="file-input" type="file" name="resume" id="flattenedSource"
+            onchange="document.getElementById('fileName').innerText = this.value">
+            <span class="file-cta">
+              <span class="file-label">
+                Choose a file…
+              </span>
+            </span>
+            <span class="file-name" id="fileName">
+            </span>
+          </label>
+        </div>
+
+	<br>
+	Solidity compiler version:<br>
+	<p class="select is-small is-link">
+	  <select id="compilerVersion">
+             <option>v0.8.11+commit.d7f03943</option>
+             <option>v0.8.10+commit.fc410830</option>
+             <option>v0.8.9+commit.e5eed63a</option>
+             <option>v0.8.8+commit.dddeac2f</option>
+             <option>v0.8.7+commit.e28d00a7</option>
+             <option>v0.8.6+commit.11564f7e</option>
+             <option>v0.8.5+commit.a4f2e591</option>
+             <option>v0.8.4+commit.c7e474f2</option>
+             <option>v0.8.3+commit.8d00100c</option>
+             <option>v0.8.2+commit.661d1103</option>
+             <option>v0.8.1+commit.df193b15</option>
+             <option>v0.8.0+commit.c7dfd78e</option>
+             <option>v0.7.6+commit.7338295f</option>
+             <option>v0.7.5+commit.eb77ed08</option>
+             <option>v0.7.4+commit.3f05b770</option>
+             <option>v0.7.3+commit.9bfce1f6</option>
+             <option>v0.7.2+commit.51b20bc0</option>
+             <option>v0.7.1+commit.f4a555be</option>
+             <option>v0.7.0+commit.9e61f92b</option>
+             <option>v0.6.12+commit.27d51765</option>
+             <option>v0.6.11+commit.5ef660b1</option>
+             <option>v0.6.10+commit.00c0fcaf</option>
+             <option>v0.6.9+commit.3e3065ac</option>
+             <option>v0.6.8+commit.0bbfe453</option>
+             <option>v0.6.7+commit.b8d736ae</option>
+             <option>v0.6.6+commit.6c089d02</option>
+             <option>v0.6.5+commit.f956cc89</option>
+             <option>v0.6.4+commit.1dca32f3</option>
+             <option>v0.6.3+commit.8dda9521</option>
+             <option>v0.6.2+commit.bacdbe57</option>
+             <option>v0.6.1+commit.e6f7d5a4</option>
+             <option>v0.6.0+commit.26b70077</option>
+             <option>v0.5.17+commit.d19bba13</option>
+             <option>v0.5.16+commit.9c3226ce</option>
+             <option>v0.5.15+commit.6a57276f</option>
+             <option>v0.5.14+commit.01f1aaa4</option>
+             <option>v0.5.13+commit.5b0b510c</option>
+             <option>v0.5.12+commit.7709ece9</option>
+             <option>v0.5.11+commit.22be8592</option>
+             <option>v0.5.10+commit.5a6ea5b1</option>
+             <option>v0.5.9+commit.c68bc34e</option>
+             <option>v0.5.8+commit.23d335f2</option>
+             <option>v0.5.7+commit.6da8b019</option>
+             <option>v0.5.6+commit.b259423e</option>
+             <option>v0.5.5+commit.47a71e8f</option>
+             <option>v0.5.4+commit.9549d8ff</option>
+             <option>v0.5.3+commit.10d17f24</option>
+             <option>v0.5.2+commit.1df8f40c</option>
+             <option>v0.5.1+commit.c8a2cb62</option>
+             <option>v0.5.0+commit.1d4f565a</option>
+             <option>v0.4.26+commit.4563c3fc</option>
+             <option>v0.4.25+commit.59dbf8f1</option>
+             <option>v0.4.24+commit.e67f0147</option>
+             <option>v0.4.23+commit.124ca40d</option>
+             <option>v0.4.22+commit.4cb486ee</option>
+             <option>v0.4.21+commit.dfe3193c</option>
+             <option>v0.4.20+commit.3155dd80</option>
+             <option>v0.4.19+commit.c4cbbb05</option>
+             <option>v0.4.18+commit.9cf6e910</option>
+             <option>v0.4.17+commit.bdeb9e52</option>
+             <option>v0.4.16+commit.d7661dd9</option>
+             <option>v0.4.15+commit.8b45bddb</option>
+             <option>v0.4.14+commit.c2215d46</option>
+             <option>v0.4.13+commit.0fb4cb1a</option>
+             <option>v0.4.12+commit.194ff033</option>
+             <option>v0.4.11+commit.68ef5810</option>
+             <option>v0.4.10+commit.9e8cc01b</option>
+	  </select>
+	</p>
+	
+	<p class="control is-link">Compiler Optimization
+          <label class="radio is-small">
+            <input type="radio" name="optimizationUsed" id="optimizationUsed" checked>
+            Yes
+          </label>
+          <label class="radio is-small">
+            <input type="radio" name="optimizationUsed">
+            No
+          </label>
+        </p>
+
+	<p>Number of runs:
+	<input id="runs" type="number" class="input is-link is-small" 
+	style="width: 100px" value="200"></p>
+
+	<p>Constructor's signature:<br>
+	<input id="constructor" class="input is-link is-small" type="text" 
+	placeholder="constructor(string memory name, string memory symbol) public"></p>
+
+	<p>Constructor's arguments:<br>
+	<input id="constructorArguments" class="input is-link is-small" type="text"
+	placeholder="&quot;ExampleCoin&quot;, &quot;EXC&quot;"></p>
+
+	Opensource License:<br>
+	<div class="select is-small is-link">
+	  <select id="licenseType">
+             <option> 1. No License (None)</option>
+             <option> 2. The Unlicense (Unlicense)</option>
+             <option> 3. MIT License (MIT)</option>
+             <option> 4. GNU General Public License v2.0 (GNU GPLv2)</option>
+             <option> 5. GNU General Public License v3.0 (GNU GPLv3)</option>
+             <option> 6. GNU Lesser General Public License v2.1 (GNU LGPLv2.1)</option>
+             <option> 7. GNU Lesser General Public License v3.0 (GNU LGPLv3)</option>
+             <option> 8. BSD 2-clause "Simplified" license (BSD-2-Clause)</option>
+             <option> 9. BSD 3-clause "New" Or "Revised" license* (BSD-3-Clause)</option>
+             <option>10. Mozilla Public License 2.0 (MPL-2.0)</option>
+             <option>11. Open Software License 3.0 (OSL-3.0)</option>
+             <option>12. Apache 2.0 (Apache-2.0)</option>
+             <option>13. GNU Affero General Public License (GNU AGPLv3)</option>
+             <option>14. Business Source License (BSL 1.1)</option>
+	  </select>
+	</div>
+	
+	<center><br><button class="button is-link" onclick="submit()" 
+	>SUBMIT</button></center>
+
+  </div>
+<script>
+
+const readUploadedFileAsText = (inputFile) => {
+  const temporaryFileReader = new FileReader();
+
+  return new Promise((resolve, reject) => {
+    temporaryFileReader.onerror = () => {
+      temporaryFileReader.abort();
+      reject(new DOMException("Problem parsing input file."));
+    };
+
+    temporaryFileReader.onload = () => {
+      resolve(temporaryFileReader.result);
+    };
+    temporaryFileReader.readAsText(inputFile);
+  });
+};
+
+function IsPC() {
+       var userAgentInfo = navigator.userAgent;
+       var Agents = new Array("Android", "iPhone", "SymbianOS", "Windows Phone", "iPad", "iPod");
+       var flag = true;
+       for (var v = 0; v < Agents.length; v++) {
+            if (userAgentInfo.indexOf(Agents[v]) > 0) {
+                flag = false;
+                break;
+             }
+       }
+       return flag;
+}
+
+async function connect() {
+	if (typeof window.ethereum === 'undefined') {
+		if (typeof window.web3 !== 'undefined') {
+			window.ethereum = window.web3;
+		} else if (typeof window.TPJSBrigeClient !== 'undefined') {
+			window.ethereum = window.TPJSBrigeClient;
+		} else if (typeof window.imToken !== 'undefined') {
+			window.ethereum = window.imToken;
+		} else {
+			const provider = await detectEthereumProvider();
+			if (provider) {
+				window.ethereum = provider;
+			} else if(IsPC()) {
+				alert("Your browser has not installed a wallet extension (like MetaMask).");
+			} else {
+				alert("Please open this page inside a mobile wallet App.");
+			}
+		}
+	}
+	window.accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
+	if (window.accounts.length == 0) {
+        	window.AlertDlg = new Attention.Alert({title: "Warning",
+        	  content: "Cannot connect to wallet"});
+		return false;
+	}
+	return true;
+}
+
+async function submit() {
+	if(!await connect()) {return;}
+	const provider = new ethers.providers.Web3Provider(window.ethereum)
+
+	var contractAddress = document.getElementById("contractAddress").value
+	if(contractAddress.length == 0) {
+		window.AlertDlg = new Attention.Alert({title: "Invalid Address",
+			content: "You did not specify the contract's address."});
+		return
+	}
+	try {
+		contractAddress = ethers.utils.getAddress(contractAddress.trim())
+	} catch(e) {
+		window.AlertDlg = new Attention.Alert({title: "Invalid Address",
+			content: `Format error: ${contractAddress} is not a valid address`});
+		return
+	}
+	const code = await provider.getCode(contractAddress)
+	if(code == "0x") {
+		window.AlertDlg = new Attention.Alert({title: "Invalid Address",
+			content: `${contractAddress} is not a smart contract address`});
+		return
+	}
+
+	var contractName = document.getElementById("contractName").value
+	if(contractName.length == 0) {
+		window.AlertDlg = new Attention.Alert({title: "Invalid Contract Name",
+			content: "You did not specify the contract's name."});
+		return
+	}
+
+	var flattenedSourceFiles = document.getElementById("flattenedSource").files
+	if(flattenedSourceFiles.length == 0) {
+		window.AlertDlg = new Attention.Alert({title: "No Source File",
+			content: "You did not specify the flattened source file."});
+		return
+	}
+	document.getElementById("fileName").value = flattenedSourceFiles[0]
+	try {
+		var flattenedSource = await readUploadedFileAsText(flattenedSourceFiles[0])  
+	} catch (e) {
+		window.AlertDlg = new Attention.Alert({title: "Error when reading file",
+			content: e});
+		return
+	}
+
+	var compilerVersion = document.getElementById("compilerVersion").value
+	var optimizationUsed = document.getElementById("optimizationUsed").checked
+	var runs = document.getElementById("runs").value
+	var constructor = document.getElementById("constructor").value
+	try {
+		var constructorArguments = JSON.parse(document.getElementById("constructorArguments").value)
+	} catch (e) {
+		window.AlertDlg = new Attention.Alert({title: "Cannot parse constructor arguments",
+			content: e});
+		return
+	}
+	
+	const jsonForPost = {
+		contractAddress,
+		contractName,
+		flattenedSource,
+		compilerVersion,
+		optimizationUsed,
+		runs,
+		constructor,
+		constructorArguments,
+		licenseType,
+	}
+
+	console.log(jsonForPost)
+
+	const respData = await postData('https://example.com/verify', jsonForPost)
+	console.log(respData);
+}
+
+async function postData(url = '', data = {}) {
+  // Default options are marked with *
+  const response = await fetch(url, {
+    method: 'POST', // *GET, POST, PUT, DELETE, etc.
+    mode: 'cors', // no-cors, *cors, same-origin
+    cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+    credentials: 'same-origin', // include, *same-origin, omit
+    headers: {
+      'Content-Type': 'application/json'
+      // 'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    redirect: 'follow', // manual, *follow, error
+    referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+    body: JSON.stringify(data) // body data type must match "Content-Type" header
+  });
+  return response.json(); // parses JSON response into native JavaScript objects
+}
+
+
+document.onclick = function() {
+	if(window.AlertDlg) {
+		window.AlertDlg.destroy();
+		delete window.AlertDlg;
+	}
+}
+
+</script>
+</body>
+</html>
