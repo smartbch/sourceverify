@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import {ethers} from "ethers";
-const level = require('level')
+import level from 'level';
 import abi2solidity from "abi2solidity";
 
 
@@ -298,6 +298,6 @@ function main() {
 	test()
 }
 
-main()
+// main()
 
 
