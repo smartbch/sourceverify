@@ -29,7 +29,7 @@ app.get('/get-source-code/:addr', (req, res) => {
 });
 
 // Check Source Code Verification Status
-app.get('/get-verify-info/:addr', (req, res) => {
+app.get('/get-verify-info/:addr', async (req, res) => {
   console.log(`/get-verify-info/${req.params.addr}`);
   try {
     const ctx = await getContractContext(req.params.addr);
@@ -61,8 +61,8 @@ app.post('/verify-source-code', async (req, res) => {
     errMsg = 'missing constructor';
   } else if (! body.constructorArguments) {
     errMsg = 'missing constructorArguments';
-  } else if (! body.licenseType) {
-    errMsg = 'missing licenseType';
+  // } else if (! body.licenseType) {
+  //   errMsg = 'missing licenseType';
   } 
 
   if (errMsg) {
