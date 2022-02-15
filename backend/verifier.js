@@ -1,39 +1,45 @@
-import {chunksToLinesAsync, streamEnd, streamWrite} from '@rauschma/stringio';
-import {spawn} from 'child_process'
+/*
+The file verify contract consistency between contract on chain and deployed code out of chain with source file.
+all information need is in object context:
+context = {
+		flattenedSource: fs.readFileSync("flatten.sol", {encoding: "utf8"}),
+		optimizationUsed: bool,
+		runs: 200,
+		compilerVersion: "v0.8.10+commit.fc410830",
+		contractAddress: "0x351264f24820C91317024B7748C98CA63d6a2781",
+		contractName: "ExchangeHub",
+		constructor: "constructor() public",
+		constructorArguments: [],
+		firstVerifiedTime: 123000000,
+}
+
+context not contain licenceType, which has types below:
+1.  No License (None)
+2.  The Unlicense (Unlicense)
+3.  MIT License (MIT)
+4.  GNU General Public License v2.0 (GNU GPLv2)
+5.  GNU General Public License v3.0 (GNU GPLv3)
+6.  GNU Lesser General Public License v2.1 (GNU LGPLv2.1)
+7.  GNU Lesser General Public License v3.0 (GNU LGPLv3)
+8.  BSD 2-clause "Simplified" license (BSD-2-Clause)
+9.  BSD 3-clause "New" Or "Revised" license* (BSD-3-Clause)
+10. Mozilla Public License 2.0 (MPL-2.0)
+11. Open Software License 3.0 (OSL-3.0)
+12. Apache 2.0 (Apache-2.0)
+13. GNU Affero General Public License (GNU AGPLv3)
+14. Business Source License (BSL 1.1)
+* */
+
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
+import {chunksToLinesAsync, streamEnd, streamWrite} from '@rauschma/stringio';
+import {spawn} from 'child_process'
 import {ethers} from "ethers";
-import level from 'level';
 import abi2solidity from "abi2solidity";
+import level from 'level'
 
-
-const contractDB = level("contract-db");
-
-// contractAddress
-// contractName
-// compilerVersion
-// optimizationUsed
-// runs
-// constructor
-// constructorArguments
-// licenseType
-// flattenedSource
-
-// 1.  No License (None)
-// 2.  The Unlicense (Unlicense)
-// 3.  MIT License (MIT)
-// 4.  GNU General Public License v2.0 (GNU GPLv2)
-// 5.  GNU General Public License v3.0 (GNU GPLv3)
-// 6.  GNU Lesser General Public License v2.1 (GNU LGPLv2.1)
-// 7.  GNU Lesser General Public License v3.0 (GNU LGPLv3)
-// 8.  BSD 2-clause "Simplified" license (BSD-2-Clause)
-// 9.  BSD 3-clause "New" Or "Revised" license* (BSD-3-Clause)
-// 10. Mozilla Public License 2.0 (MPL-2.0)
-// 11. Open Software License 3.0 (OSL-3.0)
-// 12. Apache 2.0 (Apache-2.0)
-// 13. GNU Affero General Public License (GNU AGPLv3)
-// 14. Business Source License (BSL 1.1)
+const contractDB = level('contract-db', { valueEncoding: 'json' })
 
 async function writeToWritable(writable, str) {
 	await streamWrite(writable, str);
@@ -58,16 +64,15 @@ async function runCommand(cmd, args, inputStr) {
 		await writeToWritable(sub.stdin, inputStr);
 	}
 
-	var out = await getFromReadable(sub.stdout);
-	return out;
+	return await getFromReadable(sub.stdout);
 }
 
-async function test_runCommand() {
-	var out = await runCommand("/bin/cat", ["-n"], "i\nlove\nyou\n")
-	console.log(out)
-	out = await runCommand("/bin/cat", ["verifier.js"])
-	console.log(out)
-}
+// async function test_runCommand() {
+// 	let out = await runCommand("/bin/cat", ["-n"], "i\nlove\nyou\n")
+// 	console.log(out)
+// 	out = await runCommand("/bin/cat", ["verifier.js"])
+// 	console.log(out)
+// }
 
 const SolVersions = new Set([
 	"v0.4.10+commit.9e8cc01b",
@@ -139,25 +144,19 @@ const SolVersions = new Set([
 	"v0.8.11+commit.d7f03943",
 ])
 
-//fs.rmSync(dir, { recursive: true, force: true });
-
-// compilerVersion
-// optimizationUsed
-// runs
-// flattenedSource
 async function runSolc(config) {
 	try {
-		var tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "Verifier"));
+		let tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "Verifier"));
 	} catch {
 		return [null, "Cannot make temp dir"]
 	}
 	console.log("tmpDir", tmpDir)
 
-	var srcFile = path.join(tmpDir, "in.sol")
+	let srcFile = path.join(tmpDir, "in.sol")
 	fs.writeFileSync(srcFile, config.flattenedSource)
 
-	var outDir = path.join(tmpDir, "out")
-	var args = ["--bin", "--abi", "--input-file", srcFile,
+	let outDir = path.join(tmpDir, "out")
+	let args = ["--bin", "--abi", "--input-file", srcFile,
 		"--output-dir", outDir, "--evm-version", "istanbul"]
 
 	if(config.optimizationUsed) {
@@ -170,16 +169,16 @@ async function runSolc(config) {
 	if(!SolVersions.has(config.compilerVersion)) {
 		return [null, "Invalid compiler version: "+config.compilerVersion]
 	}
-	var exeFile = "solc-bin/solc-linux-amd64-"+config.compilerVersion
+	let exeFile = "solc-bin/solc-linux-amd64-"+config.compilerVersion
 	
 	console.log("runCommand", exeFile, args)
 	await runCommand(exeFile, args)
 	console.log("finished solc")
 
-	var binFile = path.join(outDir, config.contractName+".bin")
-	var hexCode = fs.readFileSync(binFile, {encoding: "utf8"});
-	var abiFile = path.join(outDir, config.contractName+".abi")
-	var abiJson = fs.readFileSync(abiFile, {encoding: "utf8"});
+	let binFile = path.join(outDir, config.contractName+".bin")
+	let hexCode = fs.readFileSync(binFile, {encoding: "utf8"});
+	let abiFile = path.join(outDir, config.contractName+".abi")
+	let abiJson = fs.readFileSync(abiFile, {encoding: "utf8"});
 
 	//try {
 	//	fs.rmSync(tmpDir, { recursive: true });
@@ -190,7 +189,7 @@ async function runSolc(config) {
 }
 
 function printHex(txt) {
-	for(var i=0; txt.length > 80; i++) {
+	for(let i=0; txt.length > 80; i++) {
 		console.log(i, txt.substr(0, 80))
 		txt = txt.substr(80)
 	}
