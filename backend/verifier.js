@@ -1,10 +1,14 @@
-import {chunksToLinesAsync, chomp, streamWrite, streamEnd, onExit} from '@rauschma/stringio';
+import {chunksToLinesAsync, streamEnd, streamWrite} from '@rauschma/stringio';
 import {spawn} from 'child_process'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import {ethers} from "ethers";
+const level = require('level')
 import abi2solidity from "abi2solidity";
+
+
+const contractDB = level("contract-db");
 
 // contractAddress
 // contractName
@@ -37,7 +41,7 @@ async function writeToWritable(writable, str) {
 }
 
 async function getFromReadable(readable) {
-	var res = ""
+	let res = ""
 	for await (const line of chunksToLinesAsync(readable)) {
 		res += line
 	}
@@ -193,10 +197,92 @@ function printHex(txt) {
 	console.log(txt)
 }
 
-async function test1() {
-	var content = fs.readFileSync("flatten.sol", {encoding: "utf8"});
-	var config = {
-		flattenedSource: content,
+/*
+Verify contract specified by context.contractAddress with other fields,
+if result is same, store the contract basic info in levelDB.
+param:
+context = {
+		flattenedSource: fs.readFileSync("flatten.sol", {encoding: "utf8"}),
+		optimizationUsed: bool,
+		runs: 200,
+		compilerVersion: "v0.8.10+commit.fc410830",
+		contractAddress: "0x351264f24820C91317024B7748C98CA63d6a2781",
+		contractName: "ExchangeHub",
+		constructor: "constructor() public",
+		constructorArguments: [],
+}
+return: bool, if same, return true, or false.
+* */
+export async function verifyContract(context) {
+	let res = await runSolc(context);
+	let hexCode = res[0][0];
+	console.log("hexCode", hexCode);
+	let abiJson = res[0][1];
+
+	const ifcDefine = abi2solidity.default(abiJson);
+	console.log("interface", ifcDefine);
+
+	const factory = new ethers.ContractFactory([context.constructor], "0x"+hexCode);
+	let tx;
+	const args = context.constructorArguments;
+	if(!args || args.length === 0) {
+		tx = factory.getDeployTransaction();
+	} else if(args.length === 1) {
+		tx = factory.getDeployTransaction(args[0]);
+	} else if(args.length === 2) {
+		tx = factory.getDeployTransaction(args[0], args[1]);
+	} else if(args.length === 3) {
+		tx = factory.getDeployTransaction(args[0], args[1], args[2]);
+	}
+	const creationBytecode = ethers.utils.hexlify(tx.data);
+
+	console.log("creationBytecode", creationBytecode);
+
+	const deployedCode = await runCommand("./deploycode", [], creationBytecode.substr(2));
+	console.log("deployed:", deployedCode);
+	const provider = new ethers.providers.JsonRpcProvider("https://smartbch.fountainhead.cash/mainnet");
+	const onChainCode = await provider.getCode(context.contractAddress);
+	console.log("on-chain:", onChainCode);
+	console.log("-----------");
+	printHex(deployedCode);
+	printHex(onChainCode.substr(2));
+	return deployedCode === onChainCode.substr(2);
+}
+
+/*
+get contract context from levelDB, return context obj:
+return:
+if contract exist, return
+context = {
+		flattenedSource: fs.readFileSync("flatten.sol", {encoding: "utf8"}),
+		optimizationUsed: bool,
+		runs: 200,
+		compilerVersion: "v0.8.10+commit.fc410830",
+		contractAddress: "0x351264f24820C91317024B7748C98CA63d6a2781",
+		contractName: "ExchangeHub",
+		constructor: "constructor() public",
+		constructorArguments: [],
+}
+if not exist or something error, return empty string "".
+* */
+export async function getContractContext(contractAddress) {
+	let context = "";
+	contractDB.get(contractAddress, function (err, value) {
+		if (err) {
+			if (err.type === 'NotFoundError') {
+				return
+			}
+			console.log("get from db error: ", err);
+			return
+		}
+		context = JSON.parse(value);
+	})
+	return context;
+}
+
+async function test() {
+	let context = {
+		flattenedSource: fs.readFileSync("flatten.sol", {encoding: "utf8"}),
 		optimizationUsed: true,
 		runs: 200,
 		compilerVersion: "v0.8.10+commit.fc410830",
@@ -205,43 +291,11 @@ async function test1() {
 		constructor: "constructor() public",
 		constructorArguments: [],
 	}
-	
-	var res = await runSolc(config)
-	var hexCode = res[0][0]
-	console.log("hexCode", hexCode)
-	var abiJson = res[0][1]
-
-	const ifcDefine = abi2solidity.default(abiJson)
-	console.log("interface", ifcDefine)
-
-	const factory = new ethers.ContractFactory([config.constructor], "0x"+hexCode)
-	let tx
-	const args = config.constructorArguments
-	if(!args || args.length == 0) {
-		tx = factory.getDeployTransaction();
-	} else if(args.length == 1) {
-		tx = factory.getDeployTransaction(args[0]);
-	} else if(args.length == 2) {
-		tx = factory.getDeployTransaction(args[0], args[1]);
-	} else if(args.length == 3) {
-		tx = factory.getDeployTransaction(args[0], args[1], args[2]);
-	}
-	const creationBytecode = ethers.utils.hexlify(tx.data)
-
-	console.log("creationBytecode", creationBytecode)
-
-	const deployedCode = await runCommand("./deploycode", [], creationBytecode.substr(2))
-	console.log("deployed:", deployedCode)
-	const provider = new ethers.providers.JsonRpcProvider("https://smartbch.fountainhead.cash/mainnet")
-	const onchainCode = await provider.getCode(config.contractAddress)
-	console.log("on-chain:", onchainCode)
-	console.log("-----------")
-	printHex(deployedCode)
-	printHex(onchainCode.substr(2))
+	await verifyContract(context)
 }
 
 function main() {
-	test1()
+	test()
 }
 
 main()

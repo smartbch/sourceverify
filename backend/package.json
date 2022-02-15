@@ -3,6 +3,7 @@
   "dependencies": {
     "@rauschma/stringio": "^1.4.0",
     "abi2solidity": "^0.1.2",
-    "ethers": "^5.5.4"
+    "ethers": "^5.5.4",
+    "level": "^7.0.1"
   }
 }

@@ -1,3 +1,4 @@
 backend/solc-bin
 backend/node_modules
+backend/.idea
 *.swp
