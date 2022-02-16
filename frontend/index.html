@@ -264,7 +264,7 @@ async function submit() {
 	var runs = document.getElementById("runs").value
 	var constructor = document.getElementById("constructor").value
 	try {
-		var constructorArguments = JSON.parse(document.getElementById("constructorArguments").value)
+		var constructorArguments = JSON.parse('['+document.getElementById("constructorArguments").value+']')
 	} catch (e) {
 		window.AlertDlg = new Attention.Alert({title: "Cannot parse constructor arguments",
 			content: e});
