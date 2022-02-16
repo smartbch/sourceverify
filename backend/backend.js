@@ -105,6 +105,9 @@ app.post('/verify-source-code', async (req, res) => {
 
 const isHTTP = process.env.HTTP;
 const port = process.env.PORT || 8080;
+const httpsCertFile = process.env.HTTPS_CERT_FILE || "moeing_dev.crt";
+const httpsCaFile   = process.env.HTTPS_CA_FILE   || "moeing_dev.ca-bundle";
+const httpsKeyFile  = process.env.HTTPS_KEY_FILE  || "moeing_dev.key";
 
 if (isHTTP) {
   app.listen(port, () =>
@@ -112,13 +115,12 @@ if (isHTTP) {
   );
 } else {
   const httpsOptions = {
-    cert: fs.readFileSync("moeing_dev.crt"),
-    ca  : fs.readFileSync("moeing_dev.ca-bundle"),
-    key : fs.readFileSync("moeing_dev.key"),
+    cert: fs.readFileSync(httpsCertFile),
+    ca  : fs.readFileSync(httpsCaFile),
+    key : fs.readFileSync(httpsKeyFile),
   };
 
   const httpsServer = https.createServer(httpsOptions, app)
-
   httpsServer.listen(port, function(err) {
     if (err) {
       console.log(err);
