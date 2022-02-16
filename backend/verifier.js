@@ -39,7 +39,11 @@ import {ethers} from "ethers";
 import abi2solidity from "abi2solidity";
 import level from 'level'
 
-const contractDB = level('contract-db', { valueEncoding: 'json' })
+const serverErr = "ServerError: ";
+const clientErr = "ClientError: "
+
+const contractDB = level('contract-db', { valueEncoding: 'json' });
+const provider = new ethers.providers.JsonRpcProvider("https://smartbch.fountainhead.cash/mainnet");
 
 async function writeToWritable(writable, str) {
 	await streamWrite(writable, str);
@@ -149,42 +153,49 @@ async function runSolc(config) {
 	try {
 		tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "Verifier"));
 	} catch {
-		return [null, "Cannot make temp dir"]
+		throw new Error(serverErr + "cannot make temp dir for contract compile");
 	}
-	console.log("tmpDir", tmpDir)
 
-	let srcFile = path.join(tmpDir, "in.sol")
-	fs.writeFileSync(srcFile, config.flattenedSource)
+	let srcFile = path.join(tmpDir, "in.sol");
+	if (typeof config.flattenedSource !== 'string') {
+		throw new Error(clientErr + 'flattenedSource not string');
+	}
+	fs.writeFileSync(srcFile, config.flattenedSource);
 
-	let outDir = path.join(tmpDir, "out")
+	let outDir = path.join(tmpDir, "out");
 	let args = ["--bin", "--abi", "--input-file", srcFile,
-		"--output-dir", outDir, "--evm-version", "istanbul"]
+		"--output-dir", outDir, "--evm-version", "istanbul"];
 
 	if(config.optimizationUsed) {
-		args.push("--optimize")
+		args.push("--optimize");
 	}
-	if(config.runs) {
-		args.push("--optimize-runs")
-		args.push(config.runs)
+	if(!isNaN(config.runs) && config.runs > 0 ) {
+		args.push("--optimize-runs");
+		args.push(config.runs);
 	}
 	if(!SolVersions.has(config.compilerVersion)) {
-		return [null, "Invalid compiler version: "+config.compilerVersion]
+		throw new Error(clientErr + "invalid compiler version [" + config.compilerVersion + "]");
 	}
-	let exeFile = "solc-bin/solc-linux-amd64-"+config.compilerVersion
+	let exeFile = "solc-bin/solc-linux-amd64-"+config.compilerVersion;
 	
 	console.log("runCommand", exeFile, args)
 	await runCommand(exeFile, args)
-	console.log("finished solc")
+	//console.log("finished solc")
 
-	let hexCode = fs.readFileSync(path.join(outDir, config.contractName+".bin"), {encoding: "utf8"});
+	let hexCode;
+	try {
+		hexCode = fs.readFileSync(path.join(outDir, config.contractName+".bin"), {encoding: "utf8"});
+	} catch (e) {
+		throw new Error(clientErr + "contract compile failed");
+	}
 	let abiJson = fs.readFileSync(path.join(outDir, config.contractName+".abi"), {encoding: "utf8"});
 
 	try {
 		fs.rmSync(tmpDir, { recursive: true,  });
 	} catch (e) {
-		return "Cannot remove temp dir"
+		throw new Error(serverErr + "cannot remove temp dir")
 	}
-	return [[hexCode, abiJson], null]
+	return [hexCode, abi2solidity.default(abiJson)]
 }
 
 function printHex(txt) {
@@ -216,23 +227,15 @@ export async function verifyContract(context) {
 	try {
 		await contractDB.get(context.contractAddress);
 	} catch (e) {
+		if (e.type !== 'NotFoundError') {
+			throw new Error(serverErr + e.toString());
+		}
 		exist = false
 	}
-	console.log("exist:", exist);
 	if (exist) {
 		return true;
 	}
-	let res = await runSolc(context);
-	if (res[1] != null) {
-		return false;
-	}
-	let hexCode = res[0][0];
-	console.log("hexCode", hexCode);
-	let abiJson = res[0][1];
-
-	const ifcDefine = abi2solidity.default(abiJson);
-	console.log("interface", ifcDefine);
-
+	let [hexCode,]  = await runSolc(context);
 	const factory = new ethers.ContractFactory([context.constructor], "0x"+hexCode);
 	let tx;
 	const args = context.constructorArguments;
@@ -247,21 +250,19 @@ export async function verifyContract(context) {
 	}
 	const creationBytecode = ethers.utils.hexlify(tx.data);
 
-	console.log("creationBytecode", creationBytecode);
+	//console.log("creationBytecode", creationBytecode);
 
 	let deployedCode = await runCommand("./deploycode", [], creationBytecode.substr(2));
-	const provider = new ethers.providers.JsonRpcProvider("https://smartbch.fountainhead.cash/mainnet");
 	let onChainCode = await provider.getCode(context.contractAddress);
 
-	deployedCode = removeIpfsHash(deployedCode).trim();
-	onChainCode = removeIpfsHash(onChainCode).trim();
+	deployedCode = removeMetadataHashEncodeBytes(deployedCode.trim());
+	onChainCode = removeMetadataHashEncodeBytes(onChainCode.trim().substr(2));
 	console.log("deployed:", deployedCode);
-	console.log("on-chain:", onChainCode.substr(2));
-	console.log("-----------");
+	console.log("on-chain:", onChainCode);
 
-	printHex(deployedCode);
-	printHex(onChainCode.substr(2));
-	let isSame =  deployedCode === onChainCode.substr(2);
+	// printHex(deployedCode);
+	// printHex(onChainCode.substr(2));
+	let isSame =  deployedCode === onChainCode;
 	if (isSame) {
 		await contractDB.put(context.contractAddress, context);
 		await contractDB.put(Math.floor(Date.now() / 1000).toString + context.contractAddress, "");
@@ -270,12 +271,15 @@ export async function verifyContract(context) {
 	return isSame
 }
 
-// TODO: temporary implementation 
 // https://docs.soliditylang.org/en/latest/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
-function removeIpfsHash(code) {
-	const regex = /(a264697066735822)([0-9a-fA-F]{68})(64736f6c6343)/g;
-	const replacement = '$1xxxxxxxxxxxxxxx---ipfs-hash---xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx$3';
-	return code.replaceAll(regex, replacement);
+// 0xa2
+// 0x64 'i' 'p' 'f' 's' 0x58 0x22 <34 bytes IPFS hash>
+// 0x64 's' 'o' 'l' 'c' 0x43 <3 byte version encoding>
+// 0x00 0x33
+function removeMetadataHashEncodeBytes(code) {
+	const regex = /(a264697066735822)([0-9a-fA-F]{68})(64736f6c6343)([0-9a-fA-F]{6})(0033)$/;
+	//const replacement = '$1xxxxxxxxxxxxxxx---ipfs-hash---xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx$3';
+	return code.replace(regex, "");
 }
 
 /*
@@ -298,14 +302,26 @@ export async function getContractContext(contractAddress) {
 	let context = "";
 	try {
 		context = await contractDB.get(contractAddress);
-	} catch (e) {}
+	} catch (e) {
+		if (e.type !== 'NotFoundError') {
+			throw new Error(serverErr + e.toString());
+		}
+	}
 	return context;
 }
 
 // return all contract addressed which first verified time between [start, end)。
 export async function getContractAddressesWithTimeRange(start, end) {
 	let contractSet = [];
-	let stream =  contractDB.createReadStream({ keys: true, values: false, gte: start, lte: end });
+	if (start <= end) {
+		throw new Error(clientErr + "start timestamp should bigger than end timestamp");
+	}
+	let stream;
+	try {
+		stream =  contractDB.createReadStream({ keys: true, values: false, gte: start, lte: end });
+	} catch (e) {
+		throw new Error(serverErr + e.toString());
+	}
 	for await (const key of stream) {
 		contractSet.push(key);
 	}
@@ -327,7 +343,11 @@ async function test() {
 }
 
 async function main() {
-	await test()
+	try {
+		await test()
+	} catch (e) {
+		console.log(e.toString());
+	}
 }
 
 // main()
