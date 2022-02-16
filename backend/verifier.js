@@ -260,6 +260,7 @@ export async function verifyContract(context) {
 	let isSame =  deployedCode === onChainCode.substr(2);
 	if (isSame) {
 		await contractDB.put(context.contractAddress, context);
+		await contractDB.put(Math.floor(Date.now() / 1000).toString + context.contractAddress, "");
 	}
 	return isSame
 }
@@ -288,6 +289,16 @@ export async function getContractContext(contractAddress) {
 	return context;
 }
 
+// return all contract addressed which first verified time between [start, end)。
+export async function getContractAddressesWithTimeRange(start, end) {
+	let contractSet = [];
+	let stream =  contractDB.createReadStream({ keys: true, values: false, gte: start, lte: end });
+	for await (const key of stream) {
+		contractSet.push(key);
+	}
+	return contractSet;
+}
+
 async function test() {
 	let context = {
 		flattenedSource: fs.readFileSync("flatten.sol", {encoding: "utf8"}),
@@ -302,8 +313,8 @@ async function test() {
 	await verifyContract(context)
 }
 
-function main() {
-	test()
+async function main() {
+	await test()
 }
 
 // main()
