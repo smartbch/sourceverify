@@ -4,6 +4,7 @@
     "@rauschma/stringio": "^1.4.0",
     "abi2solidity": "^0.1.2",
     "body-parser": "^1.19.1",
+    "cors": "^2.8.5",
     "ethers": "^5.5.4",
     "express": "^4.17.2",
     "level": "^7.0.1"

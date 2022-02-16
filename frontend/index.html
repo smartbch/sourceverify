@@ -285,7 +285,8 @@ async function submit() {
 
 	console.log(jsonForPost)
 
-	const respData = await postData('https://example.com/verify', jsonForPost)
+	const rpcURL = 'https://moeing.dev:8080/verify-source-code';
+	const respData = await postData(rpcURL, jsonForPost)
 	console.log(respData);
 }
 

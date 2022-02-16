@@ -249,12 +249,16 @@ export async function verifyContract(context) {
 
 	console.log("creationBytecode", creationBytecode);
 
-	const deployedCode = await runCommand("./deploycode", [], creationBytecode.substr(2));
-	console.log("deployed:", deployedCode);
+	let deployedCode = await runCommand("./deploycode", [], creationBytecode.substr(2));
 	const provider = new ethers.providers.JsonRpcProvider("https://smartbch.fountainhead.cash/mainnet");
-	const onChainCode = await provider.getCode(context.contractAddress);
-	console.log("on-chain:", onChainCode);
+	let onChainCode = await provider.getCode(context.contractAddress);
+
+	deployedCode = removeIpfsHash(deployedCode).trim();
+	onChainCode = removeIpfsHash(onChainCode).trim();
+	console.log("deployed:", deployedCode);
+	console.log("on-chain:", onChainCode.substr(2));
 	console.log("-----------");
+
 	printHex(deployedCode);
 	printHex(onChainCode.substr(2));
 	let isSame =  deployedCode === onChainCode.substr(2);
@@ -262,7 +266,16 @@ export async function verifyContract(context) {
 		await contractDB.put(context.contractAddress, context);
 		await contractDB.put(Math.floor(Date.now() / 1000).toString + context.contractAddress, "");
 	}
+	console.log('isSame:', isSame);
 	return isSame
+}
+
+// TODO: temporary implementation 
+// https://docs.soliditylang.org/en/latest/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
+function removeIpfsHash(code) {
+	const regex = /(a264697066735822)([0-9a-fA-F]{68})(64736f6c6343)/g;
+	const replacement = '$1xxxxxxxxxxxxxxx---ipfs-hash---xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx$3';
+	return code.replaceAll(regex, replacement);
 }
 
 /*

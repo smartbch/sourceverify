@@ -1,11 +1,16 @@
+import fs from 'fs';
+import https from 'https';
+
 import express from 'express';
 import bodyParser from 'body-parser';
-import { verifyContract, getContractContext } from './verifier.js';
+import cors from 'cors';
+
+import { verifyContract, getContractContext, getContractAddressesWithTimeRange } from './verifier.js';
 
 const app = express();
 
-// parse application/json
-app.use(bodyParser.json());
+app.use(bodyParser.json());   // parse application/json
+app.use(cors({origin: '*'})); // allow any page to use this API
 
 app.use((err, req, res, next) => {
   if (err) {
@@ -17,16 +22,16 @@ app.use((err, req, res, next) => {
 });
 
 // Get Contract ABI for Verified Contract Source Codes
-app.get('/get-abi/:addr', (req, res) => {
-  // TODO
-  res.send(`get-abi, addr: ${req.params.addr}`);
-});
+// app.get('/get-abi/:addr', (req, res) => {
+//   // TODO
+//   res.send(`get-abi, addr: ${req.params.addr}`);
+// });
 
 // Get Contract Source Code for Verified Contract Source Codes
-app.get('/get-source-code/:addr', (req, res) => {
-  // TODO
-  res.send(`get-source-code, addr: ${req.params.addr}`);
-});
+// app.get('/get-source-code/:addr', (req, res) => {
+//   // TODO
+//   res.send(`get-source-code, addr: ${req.params.addr}`);
+// });
 
 // Check Source Code Verification Status
 app.get('/get-verify-info/:addr', async (req, res) => {
@@ -34,6 +39,27 @@ app.get('/get-verify-info/:addr', async (req, res) => {
   try {
     const ctx = await getContractContext(req.params.addr);
     res.json({ status: "success", data: ctx });
+  } catch (err) {
+    res.json({ status: "error", message: err });
+  }
+});
+
+app.get('/get-verified-contracts', async (req, res) => {
+  const start = req.query.start;
+  const end = req.query.end;
+  console.log('/get-verified-contracts, start=', start, 'end=', end);
+  if (!start) {
+    res.json({ status: "error", message: 'missing query param: start' });
+    return;
+  }
+  if (!end) {
+    res.json({ status: "error", message: 'missing query param: end' });
+    return;
+  }
+
+  try {
+    const addrs = getContractAddressesWithTimeRange(start, end);
+    res.json({ status: "success", data: addrs });
   } catch (err) {
     res.json({ status: "error", message: err });
   }
@@ -66,7 +92,7 @@ app.post('/verify-source-code', async (req, res) => {
   } 
 
   if (errMsg) {
-  	res.json({ status: "error", message: errMsg });
+    res.json({ status: "error", message: errMsg });
   } else {
     try {      
       const ok = await verifyContract(body);
@@ -75,12 +101,29 @@ app.post('/verify-source-code', async (req, res) => {
       res.json({ status: "error", message: err });
     }
   }
-
 });
 
-const port = process.env.PORT || 8765;
-// console.log('port:', port);
+const isHTTP = process.env.HTTP;
+const port = process.env.PORT || 8080;
 
-app.listen(port, () =>
-  console.log(`listening on port ${port}!`),
-);
+if (isHTTP) {
+  app.listen(port, () =>
+    console.log(`HTTP server listening on port ${port}!`),
+  );
+} else {
+  const httpsOptions = {
+    cert: fs.readFileSync("moeing_dev.crt"),
+    ca  : fs.readFileSync("moeing_dev.ca-bundle"),
+    key : fs.readFileSync("moeing_dev.key"),
+  };
+
+  const httpsServer = https.createServer(httpsOptions, app)
+
+  httpsServer.listen(port, function(err) {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log(`HTTPS server listening on port ${port}!`);
+    }
+  });
+}
