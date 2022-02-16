@@ -288,6 +288,10 @@ async function submit() {
 	const rpcURL = 'https://moeing.dev:8080/verify-source-code';
 	const respData = await postData(rpcURL, jsonForPost)
 	console.log(respData);
+	window.AlertDlg = new Attention.Alert({
+		title: "Verify Result",
+		content: JSON.stringify(respData),
+	});
 }
 
 async function postData(url = '', data = {}) {
