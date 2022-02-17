@@ -60,7 +60,7 @@ async function getFromReadable(readable) {
 
 async function runCommand(cmd, args, inputStr) {
 	const sub = spawn(cmd, args, {
-		stdio: ['pipe', 'pipe', process.stderr],
+		stdio: ['pipe', 'pipe', 'pipe'/*process.stderr*/],
 		env: {...process.env, LD_LIBRARY_PATH: '.'},
 	});
 
@@ -68,11 +68,15 @@ async function runCommand(cmd, args, inputStr) {
 		await writeToWritable(sub.stdin, inputStr);
 	}
 
-	return await getFromReadable(sub.stdout);
+	const errMsg = await getFromReadable(sub.stderr);
+	console.log('runCommand err: ----------\n', errMsg, '\n----------');
+
+	const output = await getFromReadable(sub.stdout);
+	return [output, errMsg];
 }
 
 // async function test_runCommand() {
-// 	let out = await runCommand("/bin/cat", ["-n"], "i\nlove\nyou\n")
+// 	let [out, ] = await runCommand("/bin/cat", ["-n"], "i\nlove\nyou\n")
 // 	console.log(out)
 // 	out = await runCommand("/bin/cat", ["verifier.js"])
 // 	console.log(out)
@@ -179,8 +183,11 @@ async function runSolc(config) {
 	let exeFile = "solc-bin/solc-linux-amd64-"+config.compilerVersion;
 	
 	console.log("runCommand", exeFile, args)
-	await runCommand(exeFile, args)
-	//console.log("finished solc")
+	let [solcOut, solcErr] = await runCommand(exeFile, args)
+	console.log("finished solc:", solcOut);
+	if (solcErr.includes('Error:')) {
+		throw new Error(clientErr + "contract compile failed: " + solcErr);
+	}
 
 	let hexCode;
 	try {
@@ -235,7 +242,10 @@ export async function verifyContract(context) {
 	if (exist) {
 		return true;
 	}
-	let [hexCode,]  = await runSolc(context);
+	let [hexCode, abiJson] = await runSolc(context);
+	// console.log('---abi json---', abiJson);
+	context.abi = abiJson;
+
 	const factory = new ethers.ContractFactory([context.constructor], "0x"+hexCode);
 	let tx;
 	const args = context.constructorArguments;
@@ -250,9 +260,9 @@ export async function verifyContract(context) {
 	}
 	const creationBytecode = ethers.utils.hexlify(tx.data);
 
-	//console.log("creationBytecode", creationBytecode);
+	// console.log("creationBytecode", creationBytecode);
 
-	let deployedCode = await runCommand("./deploycode", [], creationBytecode.substr(2));
+	let [deployedCode, errMsg] = await runCommand("./deploycode", [], creationBytecode.substr(2));
 	let onChainCode = await provider.getCode(context.contractAddress);
 
 	deployedCode = removeMetadataHashEncodeBytes(deployedCode.trim());
@@ -313,8 +323,8 @@ export async function getContractContext(contractAddress) {
 // return all contract addressed which first verified time between [start, end)。
 export async function getContractAddressesWithTimeRange(start, end) {
 	let contractSet = [];
-	if (start <= end) {
-		throw new Error(clientErr + "start timestamp should bigger than end timestamp");
+	if (start > end) {
+		throw new Error(clientErr + "start timestamp should less than end timestamp");
 	}
 	let stream;
 	try {

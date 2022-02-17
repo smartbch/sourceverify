@@ -21,26 +21,48 @@ app.use((err, req, res, next) => {
   }
 });
 
-// Get Contract ABI for Verified Contract Source Codes
-// app.get('/get-abi/:addr', (req, res) => {
-//   // TODO
-//   res.send(`get-abi, addr: ${req.params.addr}`);
-// });
-
 // Get Contract Source Code for Verified Contract Source Codes
-// app.get('/get-source-code/:addr', (req, res) => {
-//   // TODO
-//   res.send(`get-source-code, addr: ${req.params.addr}`);
-// });
+app.get('/contract/source/:addr', (req, res) => {
+  console.log('/contract/source/', req.params.addr);
+  try {
+    const info = await getContractContext(req.params.addr);
+    if (info) {
+      res.json({ status: "success", data: info.flattenedSource });
+    } else {
+      res.json({ status: "error", message: "not verified" });
+    }
+  } catch (err) {
+    res.json({ status: "error", message: err.toString() });
+  }
+});
+
+// Get Contract ABI for Verified Contract Source Codes
+app.get('/contract/abi/:addr', (req, res) => {
+  console.log('/contract/abi/', req.params.addr);
+  try {
+    const info = await getContractContext(req.params.addr);
+    if (info) {
+      res.json({ status: "success", data: info.abi });
+    } else {
+      res.json({ status: "error", message: "not verified" });
+    }
+  } catch (err) {
+    res.json({ status: "error", message: err.toString() });
+  }
+});
 
 // Check Source Code Verification Status
 app.get('/contract/info/:addr', async (req, res) => {
   console.log(`/contract/info/${req.params.addr}`);
   try {
-    const ctx = await getContractContext(req.params.addr);
-    res.json({ status: "success", data: ctx });
+    const info = await getContractContext(req.params.addr);
+    if (info) {
+      res.json({ status: "success", data: info });
+    } else {
+      res.json({ status: "error", message: "not verified" });
+    }
   } catch (err) {
-    res.json({ status: "error", message: err });
+    res.json({ status: "error", message: err.toString() });
   }
 });
 
@@ -58,10 +80,10 @@ app.get('/verified-contracts', async (req, res) => {
   }
 
   try {
-    const addrs = getContractAddressesWithTimeRange(start, end);
+    const addrs = await getContractAddressesWithTimeRange(start, end);
     res.json({ status: "success", data: addrs });
   } catch (err) {
-    res.json({ status: "error", message: err });
+    res.json({ status: "error", message: err.toString() });
   }
 });
 
@@ -94,11 +116,24 @@ app.post('/contract/verify', async (req, res) => {
   if (errMsg) {
     res.json({ status: "error", message: errMsg });
   } else {
-    try {      
-      const ok = await verifyContract(body);
-      res.json({ status: "success" });
+    try {
+      const ok = await verifyContract({
+        contractAddress     : body.contractAddress,
+        flattenedSource     : body.flattenedSource,
+        contractName        : body.contractName,
+        constructor         : body.constructor,
+        constructorArguments: body.constructorArguments,
+        compilerVersion     : body.compilerVersion,
+        optimizationUsed    : body.optimizationUsed,
+        runs                : body.runs,
+      });
+      if (ok) {
+        res.json({ status: "success" });
+      } else {
+        res.json({ status: "error", message: "failed to verify contract" });
+      }
     } catch (err) {
-      res.json({ status: "error", message: err });
+      res.json({ status: "error", message: err.toString() });
     }
   }
 });

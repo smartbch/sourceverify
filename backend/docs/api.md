@@ -58,7 +58,7 @@ Response: JSON, fields:
 Get contract verification info. Example request:
 
 ```
- https://moeing.dev:8080/contract/info/0x351264f24820C91317024B7748C98CA63d6a2781
+https://moeing.dev:8080/contract/info/0x351264f24820C91317024B7748C98CA63d6a2781
 ```
 
 Response: JSON, fields:
@@ -66,7 +66,7 @@ Response: JSON, fields:
 | Field   | Type   | Required | Description                            |
 | ------- | ------ | -------- | -------------------------------------- |
 | status  | String | Yes      | "success" or "error"                   |
-| message | String | No       | Error message                          |
+| message | String | No       | Error info                             |
 | data    | Object | No       | Same as body posted to contract/verify |
 
 Example response:
