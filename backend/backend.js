@@ -101,9 +101,9 @@ app.post('/contract/verify', async (req, res) => {
     errMsg = 'missing flattenedSource';
   } else if (! body.compilerVersion) {
     errMsg = 'missing compilerVersion';
-  } else if (! body.optimizationUsed) {
-    errMsg = 'missing optimizationUsed';
-  } else if (! body.runs) {
+  // } else if (! body.optimizationUsed) {
+  //   errMsg = 'missing optimizationUsed';
+  } else if (body.optimizationUsed && !body.runs) {
     errMsg = 'missing runs';
   } else if (! body.constructor) {
     errMsg = 'missing constructor';
