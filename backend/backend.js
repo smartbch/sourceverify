@@ -34,8 +34,8 @@ app.use((err, req, res, next) => {
 // });
 
 // Check Source Code Verification Status
-app.get('/get-verify-info/:addr', async (req, res) => {
-  console.log(`/get-verify-info/${req.params.addr}`);
+app.get('/contract/info/:addr', async (req, res) => {
+  console.log(`/contract/info/${req.params.addr}`);
   try {
     const ctx = await getContractContext(req.params.addr);
     res.json({ status: "success", data: ctx });
@@ -44,10 +44,10 @@ app.get('/get-verify-info/:addr', async (req, res) => {
   }
 });
 
-app.get('/get-verified-contracts', async (req, res) => {
+app.get('/verified-contracts', async (req, res) => {
   const start = req.query.start;
   const end = req.query.end;
-  console.log('/get-verified-contracts, start=', start, 'end=', end);
+  console.log('/verified-contracts, start=', start, 'end=', end);
   if (!start) {
     res.json({ status: "error", message: 'missing query param: start' });
     return;
@@ -66,7 +66,7 @@ app.get('/get-verified-contracts', async (req, res) => {
 });
 
 // Verify Source Code
-app.post('/verify-source-code', async (req, res) => {
+app.post('/contract/verify', async (req, res) => {
   console.log('body:', req.body);
   const body = req.body;
 
