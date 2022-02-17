@@ -41,6 +41,7 @@ import level from 'level'
 
 const serverErr = "ServerError: ";
 const clientErr = "ClientError: "
+const metadataHashEncodeBytesLen = 53;
 
 const contractDB = level('contract-db', { valueEncoding: 'json' });
 const provider = new ethers.providers.JsonRpcProvider("https://smartbch.fountainhead.cash/mainnet");
@@ -263,6 +264,9 @@ export async function verifyContract(context) {
 	// console.log("creationBytecode", creationBytecode);
 
 	let [deployedCode, errMsg] = await runCommand("./deploycode", [], creationBytecode.substr(2));
+	if (deployedCode.length <= metadataHashEncodeBytesLen) {
+		throw new Error(clientErr + 'contract deployment error');
+	}
 	let onChainCode = await provider.getCode(context.contractAddress);
 
 	deployedCode = removeMetadataHashEncodeBytes(deployedCode.trim());
