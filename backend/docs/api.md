@@ -66,7 +66,7 @@ Response: JSON, fields:
 | Field   | Type   | Required | Description                            |
 | ------- | ------ | -------- | -------------------------------------- |
 | status  | String | Yes      | "success" or "error"                   |
-| message | String | No       | Error info                             |
+| message | String | No       | Error message                          |
 | data    | Object | No       | Same as body posted to contract/verify |
 
 Example response:
