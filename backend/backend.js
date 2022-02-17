@@ -22,7 +22,7 @@ app.use((err, req, res, next) => {
 });
 
 // Get Contract Source Code for Verified Contract Source Codes
-app.get('/contract/source/:addr', (req, res) => {
+app.get('/contract/source/:addr', async (req, res) => {
   console.log('/contract/source/', req.params.addr);
   try {
     const info = await getContractContext(req.params.addr);
@@ -37,7 +37,7 @@ app.get('/contract/source/:addr', (req, res) => {
 });
 
 // Get Contract ABI for Verified Contract Source Codes
-app.get('/contract/abi/:addr', (req, res) => {
+app.get('/contract/abi/:addr', async (req, res) => {
   console.log('/contract/abi/', req.params.addr);
   try {
     const info = await getContractContext(req.params.addr);
