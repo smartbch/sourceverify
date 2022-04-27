@@ -285,15 +285,27 @@ export async function verifyContract(context) {
 	return isSame
 }
 
-// https://docs.soliditylang.org/en/latest/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
-// 0xa2
-// 0x64 'i' 'p' 'f' 's' 0x58 0x22 <34 bytes IPFS hash>
-// 0x64 's' 'o' 'l' 'c' 0x43 <3 byte version encoding>
-// 0x00 0x33
 function removeMetadataHashEncodeBytes(code) {
+	// solc after v0.5.0
+	// https://docs.soliditylang.org/en/latest/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
+	// 0xa2
+	// 0x64 'i' 'p' 'f' 's' 0x58 0x22 <34 bytes IPFS hash>
+	// 0x64 's' 'o' 'l' 'c' 0x43 <3 byte version encoding>
+	// 0x00 0x33
 	const regex = /(a264697066735822)([0-9a-fA-F]{68})(64736f6c6343)([0-9a-fA-F]{6})(0033)$/;
 	//const replacement = '$1xxxxxxxxxxxxxxx---ipfs-hash---xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx$3';
-	return code.replace(regex, "");
+	const codeWithoutMD = code.replace(regex, "");
+	if (codeWithoutMD.length < code.length) {
+		return codeWithoutMD;
+	}
+
+	// solc before v0.5.0
+	// https://docs.soliditylang.org/en/v0.4.26/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
+	// 0xa1
+	// 0x65 'b' 'z' 'z' 'r' '0' 0x58 0x20 <32 bytes swarm hash> 0x00 0x29
+	//
+	const regexV4 = /(a165627a7a72305820)([0-9a-fA-F]{64})(0029)$/;
+	return code.replace(regexV4, "");
 }
 
 /*
