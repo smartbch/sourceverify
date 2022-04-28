@@ -1,9 +1,9 @@
 backend/solc-bin
 backend/node_modules
-backend/.idea
 backend/contract-db/
 backend/deploycode
 backend/libevmwrap.so
 moeing_dev.*
 *.swp
 .DS_Store
+.idea

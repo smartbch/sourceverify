@@ -37,6 +37,8 @@
 	Solidity compiler version:<br>
 	<p class="select is-small is-link">
 	  <select id="compilerVersion">
+             <option>v0.8.13+commit.abaa5c0e</option>
+             <option>v0.8.12+commit.f00d7308</option>
              <option>v0.8.11+commit.d7f03943</option>
              <option>v0.8.10+commit.fc410830</option>
              <option>v0.8.9+commit.e5eed63a</option>
@@ -106,7 +108,24 @@
              <option>v0.4.10+commit.9e8cc01b</option>
 	  </select>
 	</p>
-	
+
+    <br>Evm Version:<br>
+    <div class="select is-small is-link">
+        <select id="evmVersionType">
+              <option>default</option>
+              <option>london</option>
+              <option>berlin</option>
+              <option>istanbul</option>
+              <option>petersburg</option>
+              <option>constantinople</option>
+              <option>byzantium</option>
+              <option>spuriousDragon</option>
+              <option>tangerineWhistle</option>
+        </select>
+    </div>
+
+    <br>
+      <br>
 	<p class="control is-link">Compiler Optimization
           <label class="radio is-small">
             <input type="radio" name="optimizationUsed" id="optimizationUsed" checked>
@@ -270,7 +289,7 @@ async function submit() {
 			content: e});
 		return
 	}
-	
+	var evmVersion = document.getElementById("evmVersionType").value
 	const jsonForPost = {
 		contractAddress,
 		contractName,
@@ -281,6 +300,7 @@ async function submit() {
 		constructor,
 		constructorArguments,
 		licenseType,
+        evmVersion,
 	}
 
 	console.log(jsonForPost)
@@ -311,7 +331,6 @@ async function postData(url = '', data = {}) {
   });
   return response.json(); // parses JSON response into native JavaScript objects
 }
-
 
 document.onclick = function() {
 	if(window.AlertDlg) {

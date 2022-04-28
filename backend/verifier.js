@@ -151,6 +151,8 @@ const SolVersions = new Set([
 	"v0.8.9+commit.e5eed63a",
 	"v0.8.10+commit.fc410830",
 	"v0.8.11+commit.d7f03943",
+	"v0.8.12+commit.f00d7308",
+	"v0.8.13+commit.abaa5c0e",
 ])
 
 async function runSolc(config) {
@@ -168,9 +170,13 @@ async function runSolc(config) {
 	fs.writeFileSync(srcFile, config.flattenedSource);
 
 	let outDir = path.join(tmpDir, "out");
+	// if not specific evm-version, use the default one in each sol which always use the newest version it supports, but not all this.
 	let args = ["--bin", "--abi", "--input-file", srcFile,
-		"--output-dir", outDir, "--evm-version", "istanbul"];
-
+		"--output-dir", outDir];
+	if (typeof config.evmVersion === 'string' && config.evmVersion !== "default") {
+		args = ["--bin", "--abi", "--input-file", srcFile,
+			"--output-dir", outDir, "--evm-version", config.evmVersion];
+	}
 	if(config.optimizationUsed) {
 		args.push("--optimize");
 	}
@@ -364,6 +370,7 @@ async function test() {
 		contractName: "ExchangeHub",
 		constructor: "constructor() public",
 		constructorArguments: [],
+		evmVersion: "default"
 	}
 	await verifyContract(context)
 }

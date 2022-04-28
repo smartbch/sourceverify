@@ -21,36 +21,6 @@ app.use((err, req, res, next) => {
   }
 });
 
-// Get Contract Source Code for Verified Contract Source Codes
-app.get('/contract/source/:addr', async (req, res) => {
-  console.log('/contract/source/', req.params.addr);
-  try {
-    const info = await getContractContext(req.params.addr);
-    if (info) {
-      res.json({ status: "success", data: info.flattenedSource });
-    } else {
-      res.json({ status: "error", message: "not verified" });
-    }
-  } catch (err) {
-    res.json({ status: "error", message: err.toString() });
-  }
-});
-
-// Get Contract ABI for Verified Contract Source Codes
-app.get('/contract/abi/:addr', async (req, res) => {
-  console.log('/contract/abi/', req.params.addr);
-  try {
-    const info = await getContractContext(req.params.addr);
-    if (info) {
-      res.json({ status: "success", data: info.abi });
-    } else {
-      res.json({ status: "error", message: "not verified" });
-    }
-  } catch (err) {
-    res.json({ status: "error", message: err.toString() });
-  }
-});
-
 // Check Source Code Verification Status
 app.get('/contract/info/:addr', async (req, res) => {
   console.log(`/contract/info/${req.params.addr}`);
@@ -111,8 +81,7 @@ app.post('/contract/verify', async (req, res) => {
     errMsg = 'missing constructorArguments';
   // } else if (! body.licenseType) {
   //   errMsg = 'missing licenseType';
-  } 
-
+  }
   if (errMsg) {
     res.json({ status: "error", message: errMsg });
   } else {
@@ -126,6 +95,7 @@ app.post('/contract/verify', async (req, res) => {
         compilerVersion     : body.compilerVersion,
         optimizationUsed    : body.optimizationUsed,
         runs                : body.runs,
+        evmVersion          : body.evmVersion,
       });
       if (ok) {
         res.json({ status: "success" });

@@ -1,4 +1,5 @@
 #!/bin/bash
+# https://github.com/ethereum/solc-bin/blob/gh-pages/bin/list.json
 getSolc() {
   wget https://binaries.soliditylang.org/linux-amd64/$1
 }
@@ -69,3 +70,7 @@ getSolc solc-linux-amd64-v0.8.6%2Bcommit.11564f7e
 getSolc solc-linux-amd64-v0.8.7%2Bcommit.e28d00a7
 getSolc solc-linux-amd64-v0.8.8%2Bcommit.dddeac2f
 getSolc solc-linux-amd64-v0.8.9%2Bcommit.e5eed63a
+getSolc solc-linux-amd64-v0.8.10%2Bcommit.fc410830
+getSolc solc-linux-amd64-v0.8.11%2Bcommit.d7f03943
+getSolc solc-linux-amd64-v0.8.12%2Bcommit.f00d7308
+getSolc solc-linux-amd64-v0.8.13%2Bcommit.abaa5c0e
