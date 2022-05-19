@@ -264,6 +264,8 @@ export async function verifyContract(context) {
 		tx = factory.getDeployTransaction(args[0], args[1]);
 	} else if(args.length === 3) {
 		tx = factory.getDeployTransaction(args[0], args[1], args[2]);
+	} else {
+		tx = factory.getDeployTransaction(...args);
 	}
 	const creationBytecode = ethers.utils.hexlify(tx.data);
 
